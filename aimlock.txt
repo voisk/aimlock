@@ -5,107 +5,202 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
---==================================================
--- GUI
---==================================================
+-- НАСТРОЙКИ
+local FOV_RADIUS = 150
+local MIN_FOV = 50
+local MAX_FOV = 400
 
+local AimLockEnabled = false
+local ESPEnabled = false
+local WallCheckEnabled = true
+local FOVEnabled = true
+
+local Highlights = {}
+
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SilentAimUI"
+ScreenGui.Name = "AimLockGUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.DisplayOrder = 999999
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Главное меню
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 220, 0, 230)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -115)
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-MainFrame.BorderSizePixel = 0
-MainFrame.ZIndex = 100
+-- ПАНЕЛЬ
+local Panel = Instance.new("Frame")
+Panel.Parent = ScreenGui
+Panel.Size = UDim2.fromOffset(200, 260)
+Panel.Position = UDim2.new(0.5, -100, 0.7, 0)
+Panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Panel.BorderSizePixel = 0
+Panel.Active = true
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
-MainCorner.Parent = MainFrame
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 8)
+PanelCorner.Parent = Panel
 
--- Крестик
+-- ФУНКЦИЯ СОЗДАНИЯ КНОПОК
+local function CreateButton(text, position, size)
+	local Button = Instance.new("TextButton")
+	Button.Parent = Panel
+	Button.Size = size
+	Button.Position = position
+	Button.Text = text
+	Button.TextScaled = true
+	Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Button.BorderSizePixel = 0
+
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 6)
+	Corner.Parent = Button
+
+	return Button
+end
+
+-- AIMLOCK
+local AimButton = CreateButton(
+	"AimLock: HOLD RMB",
+	UDim2.fromOffset(5, 5),
+	UDim2.new(1, -10, 0, 40)
+)
+
+-- ESP
+local ESPButton = CreateButton(
+	"ESP: OFF",
+	UDim2.fromOffset(5, 50),
+	UDim2.new(1, -10, 0, 40)
+)
+
+-- WALL CHECK
+local WallButton = CreateButton(
+	"WallCheck: ON",
+	UDim2.fromOffset(5, 95),
+	UDim2.new(1, -10, 0, 40)
+)
+
+WallButton.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+
+-- FOV
+local FOVButton = CreateButton(
+	"FOV: ON",
+	UDim2.fromOffset(5, 140),
+	UDim2.new(1, -10, 0, 40)
+)
+
+FOVButton.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+
+-- КНОПКА ЗАКРЫТИЯ
 local CloseButton = Instance.new("TextButton")
-CloseButton.Parent = MainFrame
-CloseButton.Size = UDim2.new(0, 35, 0, 35)
-CloseButton.Position = UDim2.new(1, -40, 0, 5)
-CloseButton.Text = "×"
+CloseButton.Parent = Panel
+CloseButton.Size = UDim2.fromOffset(28, 28)
+CloseButton.Position = UDim2.new(1, -33, 0, 5)
+CloseButton.Text = "X"
 CloseButton.TextScaled = true
-CloseButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+CloseButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.BorderSizePixel = 0
-CloseButton.ZIndex = 101
 
 local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseButton
 
--- Silent Aim
-local SilentAimButton = Instance.new("TextButton")
-SilentAimButton.Parent = MainFrame
-SilentAimButton.Size = UDim2.new(0, 180, 0, 45)
-SilentAimButton.Position = UDim2.new(0.5, -90, 0, 50)
-SilentAimButton.Text = "Silent Aim: OFF"
-SilentAimButton.TextScaled = true
-SilentAimButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-SilentAimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-SilentAimButton.BorderSizePixel = 0
-SilentAimButton.ZIndex = 101
+-- FOV SLIDER
+local SliderBackground = Instance.new("Frame")
+SliderBackground.Parent = Panel
+SliderBackground.Size = UDim2.new(1, -30, 0, 6)
+SliderBackground.Position = UDim2.fromOffset(15, 195)
+SliderBackground.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+SliderBackground.BorderSizePixel = 0
 
-local SilentCorner = Instance.new("UICorner")
-SilentCorner.CornerRadius = UDim.new(0, 6)
-SilentCorner.Parent = SilentAimButton
+local SliderCorner = Instance.new("UICorner")
+SliderCorner.CornerRadius = UDim.new(1, 0)
+SliderCorner.Parent = SliderBackground
 
--- FOV
-local FOVButton = Instance.new("TextButton")
-FOVButton.Parent = MainFrame
-FOVButton.Size = UDim2.new(0, 180, 0, 45)
-FOVButton.Position = UDim2.new(0.5, -90, 0, 105)
-FOVButton.Text = "FOV: OFF"
-FOVButton.TextScaled = true
-FOVButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-FOVButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FOVButton.BorderSizePixel = 0
-FOVButton.ZIndex = 101
+local SliderButton = Instance.new("TextButton")
+SliderButton.Parent = SliderBackground
+SliderButton.Size = UDim2.fromOffset(16, 16)
+SliderButton.AnchorPoint = Vector2.new(0.5, 0.5)
 
-local FOVCorner = Instance.new("UICorner")
-FOVCorner.CornerRadius = UDim.new(0, 6)
-FOVCorner.Parent = FOVButton
+local StartPercent =
+	(FOV_RADIUS - MIN_FOV) / (MAX_FOV - MIN_FOV)
 
--- Размер FOV
-local FOVSizeButton = Instance.new("TextButton")
-FOVSizeButton.Parent = MainFrame
-FOVSizeButton.Size = UDim2.new(0, 180, 0, 40)
-FOVSizeButton.Position = UDim2.new(0.5, -90, 0, 160)
-FOVSizeButton.Text = "---0--"
-FOVSizeButton.TextScaled = true
-FOVSizeButton.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
-FOVSizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FOVSizeButton.BorderSizePixel = 0
-FOVSizeButton.ZIndex = 101
+SliderButton.Position = UDim2.new(StartPercent, 0, 0.5, 0)
+SliderButton.Text = ""
+SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SliderButton.BorderSizePixel = 0
+SliderButton.AutoButtonColor = false
 
-local SizeCorner = Instance.new("UICorner")
-SizeCorner.CornerRadius = UDim.new(0, 6)
-SizeCorner.Parent = FOVSizeButton
+local SliderButtonCorner = Instance.new("UICorner")
+SliderButtonCorner.CornerRadius = UDim.new(1, 0)
+SliderButtonCorner.Parent = SliderButton
 
---==================================================
--- FOV CIRCLE
---==================================================
+-- ТЕКСТ FOV
+local FOVLabel = Instance.new("TextLabel")
+FOVLabel.Parent = Panel
+FOVLabel.Size = UDim2.new(1, 0, 0, 25)
+FOVLabel.Position = UDim2.fromOffset(0, 205)
+FOVLabel.Text = "FOV: " .. FOV_RADIUS
+FOVLabel.TextScaled = true
+FOVLabel.BackgroundTransparency = 1
+FOVLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 
+-- ПЕРЕТАСКИВАНИЕ ПАНЕЛИ
+local dragging = false
+local dragStart
+local startPos
+
+Panel.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = Panel.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+
+		local delta = input.Position - dragStart
+
+		Panel.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+-- ЗАКРЫТИЕ ПАНЕЛИ
+CloseButton.MouseButton1Click:Connect(function()
+	Panel.Visible = false
+end)
+
+-- RIGHT SHIFT ОТКРЫТЬ / ЗАКРЫТЬ
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		Panel.Visible = not Panel.Visible
+	end
+end)
+
+-- FOV КРУГ
 local FOVCircle = Instance.new("Frame")
 FOVCircle.Parent = ScreenGui
 FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-FOVCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-FOVCircle.Size = UDim2.new(0, 200, 0, 200)
 FOVCircle.BackgroundTransparency = 1
 FOVCircle.BorderSizePixel = 0
-FOVCircle.Visible = false
-FOVCircle.ZIndex = 1
 
 local CircleCorner = Instance.new("UICorner")
 CircleCorner.CornerRadius = UDim.new(1, 0)
@@ -116,83 +211,157 @@ CircleStroke.Parent = FOVCircle
 CircleStroke.Thickness = 2
 CircleStroke.Color = Color3.fromRGB(255, 255, 255)
 
---==================================================
--- НАСТРОЙКИ
---==================================================
-
-local SilentAimEnabled = false
-local SilentAimHeld = false
-local FOVEnabled = false
-local MenuVisible = true
-
-local FOVSizes = {
-	100,
-	150,
-	200,
-	300,
-	400
-}
-
-local FOVTexts = {
-	"-----0",
-	"----0-",
-	"---0--",
-	"--0---",
-	"-0----"
-}
-
-local CurrentFOV = 3
-
 local function UpdateFOV()
-	local Size = FOVSizes[CurrentFOV]
-
-	FOVCircle.Size = UDim2.new(0, Size, 0, Size)
-	FOVSizeButton.Text = FOVTexts[CurrentFOV]
-end
-
---==================================================
--- ПОИСК ЦЕЛИ
---==================================================
-
-local function GetTarget()
-	local closestPlayer = nil
-	local closestDistance = FOVSizes[CurrentFOV]
-
-	local viewportSize = Camera.ViewportSize
-
-	local screenCenter = Vector2.new(
-		viewportSize.X / 2,
-		viewportSize.Y / 2
+	FOVCircle.Size = UDim2.fromOffset(
+		FOV_RADIUS * 2,
+		FOV_RADIUS * 2
 	)
 
-	for _, player in ipairs(Players:GetPlayers()) do
+	FOVLabel.Text = "FOV: " .. math.floor(FOV_RADIUS)
+end
 
-		if player ~= LocalPlayer then
+UpdateFOV()
 
-			local character = player.Character
+-- SLIDER
+local sliderDragging = false
 
-			if character then
+local function SetSliderFromX(x)
+	local left = SliderBackground.AbsolutePosition.X
+	local width = SliderBackground.AbsoluteSize.X
 
-				local humanoid = character:FindFirstChildOfClass("Humanoid")
-				local root = character:FindFirstChild("HumanoidRootPart")
+	local percent = math.clamp(
+		(x - left) / width,
+		0,
+		1
+	)
 
-				if humanoid and humanoid.Health > 0 and root then
+	FOV_RADIUS =
+		MIN_FOV + (MAX_FOV - MIN_FOV) * percent
 
-					local screenPosition, visible =
-						Camera:WorldToViewportPoint(root.Position)
+	SliderButton.Position =
+		UDim2.new(percent, 0, 0.5, 0)
 
-					if visible and screenPosition.Z > 0 then
+	UpdateFOV()
+end
 
-						local distance = (
-							Vector2.new(
-								screenPosition.X,
-								screenPosition.Y
-							) - screenCenter
-						).Magnitude
+SliderButton.MouseButton1Down:Connect(function()
+	sliderDragging = true
+end)
 
-						if distance < closestDistance then
-							closestDistance = distance
-							closestPlayer = player
+SliderBackground.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+
+		sliderDragging = true
+		SetSliderFromX(input.Position.X)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if sliderDragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+
+		SetSliderFromX(input.Position.X)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+
+		sliderDragging = false
+	end
+end)
+
+-- AIMLOCK: РАБОТАЕТ ПОКА ЗАЖАТА ПКМ
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+
+	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		AimLockEnabled = true
+		AimButton.Text = "AimLock: ON"
+		AimButton.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		AimLockEnabled = false
+		AimButton.Text = "AimLock: HOLD RMB"
+		AimButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	end
+end)
+
+-- ПРОВЕРКА ВИДНОСТИ
+local function IsVisible(Character, Head)
+	local origin = Camera.CFrame.Position
+	local direction = Head.Position - origin
+
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = {
+		LocalPlayer.Character
+	}
+
+	local result = workspace:Raycast(origin, direction, params)
+
+	if result then
+		return result.Instance:IsDescendantOf(Character)
+	end
+
+	return false
+end
+
+-- ПОИСК ЦЕЛИ
+local function GetClosestHead()
+	local closestHead = nil
+	local shortestDistance = math.huge
+
+	local viewport = Camera.ViewportSize
+
+	-- Такой же центр, как у круга
+	local screenCenter = Vector2.new(
+		viewport.X / 2,
+		viewport.Y / 2 - 35
+	)
+
+	for _, Player in ipairs(Players:GetPlayers()) do
+		if Player ~= LocalPlayer and Player.Character then
+
+			local Character = Player.Character
+			local Head = Character:FindFirstChild("Head")
+			local Humanoid =
+				Character:FindFirstChildOfClass("Humanoid")
+
+			if Head and Humanoid and Humanoid.Health > 0 then
+				local position, onScreen =
+					Camera:WorldToViewportPoint(Head.Position)
+
+				if onScreen then
+					local screenPosition =
+						Vector2.new(position.X, position.Y)
+
+					local distance =
+						(screenPosition - screenCenter).Magnitude
+
+					local insideFOV = true
+
+					if FOVEnabled then
+						insideFOV = distance <= FOV_RADIUS
+					end
+
+					if insideFOV then
+						local canAim = true
+
+						if WallCheckEnabled then
+							canAim = IsVisible(Character, Head)
+						end
+
+						if canAim and distance < shortestDistance then
+							shortestDistance = distance
+							closestHead = Head
 						end
 					end
 				end
@@ -200,168 +369,137 @@ local function GetTarget()
 		end
 	end
 
-	return closestPlayer
+	return closestHead
 end
 
---==================================================
--- SILENT AIM КНОПКА
---==================================================
+-- ESP
+local function AddESP(Player)
+	if Player == LocalPlayer then return end
+	if not ESPEnabled then return end
+	if not Player.Character then return end
 
-SilentAimButton.MouseButton1Click:Connect(function()
+	if Highlights[Player] then
+		Highlights[Player]:Destroy()
+	end
 
-	SilentAimEnabled = not SilentAimEnabled
+	local Highlight = Instance.new("Highlight")
+	Highlight.Name = "PlayerESP"
+	Highlight.Adornee = Player.Character
+	Highlight.FillTransparency = 0.5
+	Highlight.OutlineTransparency = 0
+	Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	Highlight.Parent = Player.Character
 
-	if SilentAimEnabled then
-		SilentAimButton.Text = "Silent Aim: ON"
+	Highlights[Player] = Highlight
+end
+
+local function RemoveESP(Player)
+	if Highlights[Player] then
+		Highlights[Player]:Destroy()
+		Highlights[Player] = nil
+	end
+end
+
+local function ToggleESP()
+	ESPEnabled = not ESPEnabled
+
+	if ESPEnabled then
+		ESPButton.Text = "ESP: ON"
+		ESPButton.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+
+		for _, Player in ipairs(Players:GetPlayers()) do
+			AddESP(Player)
+		end
 	else
-		SilentAimButton.Text = "Silent Aim: OFF"
+		ESPButton.Text = "ESP: OFF"
+		ESPButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+		for _, Player in ipairs(Players:GetPlayers()) do
+			RemoveESP(Player)
+		end
+	end
+end
+
+ESPButton.MouseButton1Click:Connect(ToggleESP)
+
+-- WALL CHECK
+WallButton.MouseButton1Click:Connect(function()
+	WallCheckEnabled = not WallCheckEnabled
+
+	if WallCheckEnabled then
+		WallButton.Text = "WallCheck: ON"
+		WallButton.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+	else
+		WallButton.Text = "WallCheck: OFF"
+		WallButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	end
 end)
 
---==================================================
--- FOV КНОПКА
---==================================================
-
+-- FOV ON / OFF
 FOVButton.MouseButton1Click:Connect(function()
-
 	FOVEnabled = not FOVEnabled
-
-	FOVCircle.Visible = FOVEnabled
 
 	if FOVEnabled then
 		FOVButton.Text = "FOV: ON"
+		FOVButton.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+
+		FOVCircle.Visible = true
+		SliderBackground.Visible = true
+		SliderButton.Visible = true
+		FOVLabel.Visible = true
 	else
 		FOVButton.Text = "FOV: OFF"
+		FOVButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+		FOVCircle.Visible = false
+		SliderBackground.Visible = false
+		SliderButton.Visible = false
+		FOVLabel.Visible = false
 	end
 end)
 
---==================================================
--- РАЗМЕР FOV
---==================================================
+-- НОВЫЕ ИГРОКИ И РЕСПАВН
+local function SetupPlayer(Player)
+	if Player == LocalPlayer then return end
 
-FOVSizeButton.MouseButton1Click:Connect(function()
+	Player.CharacterAdded:Connect(function()
+		task.wait(0.5)
 
-	CurrentFOV += 1
+		if ESPEnabled then
+			AddESP(Player)
+		end
+	end)
+end
 
-	if CurrentFOV > #FOVSizes then
-		CurrentFOV = 1
-	end
+for _, Player in ipairs(Players:GetPlayers()) do
+	SetupPlayer(Player)
+end
 
-	UpdateFOV()
+Players.PlayerAdded:Connect(SetupPlayer)
+
+Players.PlayerRemoving:Connect(function(Player)
+	RemoveESP(Player)
 end)
 
---==================================================
--- ПКМ — ЗАЖАТИЕ
---==================================================
-
-UserInputService.InputBegan:Connect(function(input, processed)
-
-	if processed then
-		return
-	end
-
-	if input.UserInputType == Enum.UserInputType.MouseButton2 then
-		SilentAimHeld = true
-	end
-
-	-- RightShift
-	if input.KeyCode == Enum.KeyCode.RightShift then
-
-		MenuVisible = not MenuVisible
-
-		MainFrame.Visible = MenuVisible
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-
-	if input.UserInputType == Enum.UserInputType.MouseButton2 then
-		SilentAimHeld = false
-	end
-end)
-
---==================================================
--- ПРОВЕРКА ЦЕЛИ
---==================================================
-
+-- ОСНОВНОЙ ЦИКЛ
 RunService.RenderStepped:Connect(function()
+	local viewport = Camera.ViewportSize
 
-	if not SilentAimEnabled then
-		return
-	end
+	-- КРУГ ЧУТЬ ВЫШЕ ЦЕНТРА
+	FOVCircle.Position = UDim2.fromOffset(
+		viewport.X / 2,
+		viewport.Y / 2 - 35
+	)
 
-	if not SilentAimHeld then
-		return
-	end
+	-- AIMLOCK
+	if AimLockEnabled then
+		local Head = GetClosestHead()
 
-	if not FOVEnabled then
-		return
-	end
-
-	local target = GetTarget()
-
-	if target then
-
-		-- Здесь находится выбранная цель.
-		-- target.Character — персонаж игрока.
-		-- Для подключения твоей полоски сюда
-		-- нужно добавить её конкретную функцию захвата.
-
+		if Head then
+			Camera.CFrame = CFrame.new(
+				Camera.CFrame.Position,
+				Head.Position
+			)
+		end
 	end
 end)
-
---==================================================
--- ЗАКРЫТЬ ПОЛНОСТЬЮ
---==================================================
-
-CloseButton.MouseButton1Click:Connect(function()
-	ScreenGui:Destroy()
-end)
-
---==================================================
--- ПЕРЕТАСКИВАНИЕ МЕНЮ
---==================================================
-
-local Dragging = false
-local DragStart
-local StartPosition
-
-MainFrame.InputBegan:Connect(function(input)
-
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-		Dragging = true
-		DragStart = input.Position
-		StartPosition = MainFrame.Position
-
-		input.Changed:Connect(function()
-
-			if input.UserInputState == Enum.UserInputState.End then
-				Dragging = false
-			end
-
-		end)
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-
-	if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-
-		local Delta = input.Position - DragStart
-
-		MainFrame.Position = UDim2.new(
-			StartPosition.X.Scale,
-			StartPosition.X.Offset + Delta.X,
-
-			StartPosition.Y.Scale,
-			StartPosition.Y.Offset + Delta.Y
-		)
-	end
-end)
-
---==================================================
--- СТАРТ
---==================================================
-
-UpdateFOV()
